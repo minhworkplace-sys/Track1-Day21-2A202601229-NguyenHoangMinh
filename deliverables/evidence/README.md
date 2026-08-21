@@ -41,6 +41,9 @@ Nhớ: chạy xong một vòng là copy ngay — cuối buổi mới gom là m�
 | `judge-prompt-v1-to-v2.diff` | Diff giữa hai vòng (+31/−3 dòng) |
 | `verdicts-v1.jsonl` · `verdicts-v2.jsonl` | Output judge vòng 1 và vòng 2, có field `criteria` chấm riêng từng tiêu chí |
 | `phase1-coverage-grid.xlsx` · `phase1-question-review.md` | Lưới coverage và quyết định Keep/Rewrite/Reject cho 29 câu ứng viên |
+| `tutor-system-prompt-v1.md` · `-v2.md` | System prompt tutor trước/sau vòng iteration (thêm quy tắc 2b tách vế) |
+| `results-v3.jsonl` | Output **candidate v2** — 5/26 row phải chạy lại do lỗi transport (`VLT-024` 3 lần) |
+| `verdicts-v3-candidate.jsonl` | Judge (prompt v2) chấm candidate v2. **Không phải vòng calibrate thứ ba** — cùng judge prompt, khác đối tượng chấm |
 | `braintrust-link.md` | Link project LangSmith `ai-evaluation` |
 
 **Lưu ý đánh số:** `judge-prompt-v1/v2` là hai vòng **thực sự dùng để chấm**; prompt gốc của

@@ -130,3 +130,18 @@ là thước để đo judge, lấy verdict judge chỉnh ngược nhãn vàng l
 Bài học: agreement thô 77% trộn hai thứ khác hẳn nhau. Tách ra thì trong đúng làn judge là
 20/23 = **87%**, còn phần chênh lại nằm ở tiêu chí mà nhóm **cố ý** không giao cho judge.
 Con số tổng một mình không nói lên judge tốt hay dở.
+
+### Phase 6 — vòng iteration candidate v2
+
+AI sửa system prompt đúng **một đòn bẩy** (quy tắc 2b: tách vế trước khi từ chối), chạy lại
+26 row, chạy code checks + judge, rồi đo theo ngưỡng G1–G4 đã pre-register.
+
+**Kết quả ngược với kỳ vọng và nhóm ghi đúng như vậy:** fix KHÔNG chữa được over-refusal
+(`VLT-024`, `VLT-026` vẫn từ chối sạch), nhưng lại chữa một lỗi khác (`VLT-018`) và làm
+`quote_verbatim` tụt 21 → 16. Trượt G1 → không mở rộng ship, ngưỡng giữ nguyên không sửa
+theo kết quả.
+
+Điều đáng giá nhất là chẩn đoán *vì sao* fix trượt: đếm lại corpus thấy `embedding` xuất hiện
+**0 lần** — tutor không có nguyên liệu cho vế "trả lời được", nên quy tắc tách vế vô dụng.
+Đòn bẩy tiếp theo là retrieval, không phải prompt. Không có eval loop thì sẽ tưởng fix đã
+chạy và đi tiếp.

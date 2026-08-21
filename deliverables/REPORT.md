@@ -591,6 +591,69 @@ mà không chỉ được sửa gì.
 3. **Khẳng định không nguồn khi đã từ chối** (`VLT-018`) — từ chối xong vẫn đưa 3 ý về nội
    dung khóa học với `sources: []`. Judge bắt được, người bỏ sót.
 
+### Vòng iteration — candidate v2 (fix over-refusal)
+
+**Đòn bẩy đã thử:** system prompt, đúng một thay đổi — thêm quy tắc **2b**: *tách câu hỏi
+thành từng vế trước khi từ chối; corpus phủ được dù chỉ một vế thì PHẢI trả lời vế đó kèm
+nguồn, rồi mới nói vế còn lại không có; chỉ `out_of_scope` khi KHÔNG vế nào trả lời được*.
+Kèm siết điều kiện `out_of_scope` trong output contract. Không đụng gì khác.
+
+Evidence: `evidence/tutor-system-prompt-v1.md` → `-v2.md` · `evidence/results-v3.jsonl` ·
+`evidence/verdicts-v3-candidate.jsonl`.
+
+#### Kết quả đo theo ngưỡng đã pre-register
+
+| Ngưỡng | Yêu cầu | Candidate v2 | Đạt? |
+|---|---|---|---|
+| **G1** slice `không có trong corpus` | ≥5/6 pass, 0 fail over-refusal | `VLT-024` và `VLT-026` **vẫn từ chối sạch** (`out_of_scope`, 0 sources) dù mỗi câu có một vế corpus phủ được | ❌ |
+| **G2** các slice đang 100% không tụt | 12/12 | Chưa kết luận được — cần nhãn người cho 26 output mới | ⏳ |
+| **G3** làn code blocker 100% | schema + citation tồn tại | 26/26 và 26/26 | ✅ |
+| **G4** pass rate người ≥85% | — | Chưa có nhãn người | ⏳ |
+
+**Trượt G1 → candidate v2 KHÔNG được mở rộng phạm vi ship.** Giữ nguyên quyết định
+ship-theo-slice của v1. Ngưỡng không sửa sau khi nhìn kết quả, đúng cam kết ở phần pre-register.
+
+#### Fix nhắm một chỗ, trúng một chỗ khác
+
+| Row | v1 | candidate v2 | Nhận xét |
+|---|---|---|---|
+| `VLT-024` · `VLT-026` | over-refusal (nhãn `fail`) | **không đổi** — vẫn `out_of_scope`, 0 sources | **Đích nhắm, không trúng** |
+| `VLT-018` | `out_of_scope` + 3 khẳng định với `sources: []` (judge bắt fail R3) | `in_scope`, **4 nguồn** | Trúng ngoài dự tính — đúng lỗi judge phát hiện mà người bỏ sót |
+| `VLT-013` | tự suy diễn "cái này" = RAG, không nói giả định (nhãn `fail`) | mở đầu bằng *"Câu hỏi của bạn chưa nêu rõ 'cái này' là..."* rồi mới trả lời | Đạt D1 — nói ra giả định |
+
+#### Vì sao prompt không chữa được over-refusal
+
+`VLT-026` hỏi *"embedding hoạt động thế nào và khác retrieval ra sao"*. Đếm trên corpus thật
+(mục 1.4): `embedding` **0 lần**, `retrieval` **23 lần** — tức có đúng một vế trả lời được.
+Quy tắc 2b bảo tutor tách vế, nhưng tutor **không có nguyên liệu** cho vế đó vì
+`kb_search("embedding")` không trả về gì dùng được, nên nó kết luận cả câu ngoài phạm vi.
+
+**Đòn bẩy tiếp theo không nằm ở prompt mà ở tầng retrieval:** khi truy vấn trượt, tutor cần
+thử lại bằng từ khoá lân cận (`embedding` → `retrieval`, `search quality`) trước khi kết luận
+corpus không có. Đúng thứ tự đòn bẩy prompt → retrieval → architecture: **prompt đã hết dư
+địa cho lỗi này.**
+
+#### Tác dụng phụ đo được
+
+| | v1 | candidate v2 |
+|---|---|---|
+| `quote_verbatim` | 21/26 pass | **16/26 pass** ⚠️ |
+| Tổng citation | 53 | 56 |
+| Row có `sources` rỗng | 5 | 4 |
+| Judge verdict | 23 pass / 3 fail | 24 pass / 2 fail |
+| Chi phí | $0,1583 | $0,1737 (+10%) |
+| Latency trung bình | 18,1s | 19,6s |
+
+`quote_verbatim` **tụt 21 → 16**: tutor trích nhiều hơn nên sai nguyên văn nhiều hơn. D3 đã
+chốt đây là điểm trừ chứ không blocker nên không chặn gate, nhưng phải ghi vào scorecard — một
+fix nhắm chỗ này làm xấu chỗ kia là chuyện bình thường, và chỉ thấy được vì có eval loop.
+
+**Lưu ý kỹ thuật:** vòng chạy này 5/26 row lỗi tầng transport (connection reset / provider trả
+payload thiếu `choices`); `VLT-024` phải chạy lại 3 lần mới ra. Đây là lỗi hạ tầng chứ không
+phải lỗi model — nhưng là một lý do nữa để không đọc pass rate của một vòng chạy đơn lẻ như
+chân lý.
+
+
 ## 7. Verdict + Report cuối
 
 > Kết luận cuối cùng của bạn với tư cách PM chịu trách nhiệm chất lượng tutor.
@@ -684,6 +747,9 @@ của cả bộ nằm gọn trong ô này**. Không ship phần này cho tới k
   quá tay); bất kỳ row nào `citation_exists` fail → chặn cứng, vì bịa nguồn là lỗi không được
   phép có.
 - **Chạy lại eval loop** trước mỗi lần đổi system prompt hoặc đổi corpus, không chờ lịch.
+- **Trạng thái sau vòng iteration v2:** candidate trượt ngưỡng G1 đã pre-register → **giữ
+  nguyên ship-theo-slice**, chưa mở rộng. Việc tiếp theo là nhãn người cho `results-v3.jsonl`
+  (để kết luận G2/G4) và thử đòn bẩy retrieval.
 
 ### Câu hỏi tự soi
 
@@ -691,8 +757,10 @@ của cả bộ nằm gọn trong ô này**. Không ship phần này cho tới k
   "phần này tài liệu có, phần kia không", đúng hành vi mong muốn nhất của một tutor RAG.
   **Đáng lo nhất:** `VLT-026` — corpus có nội dung về embedding/retrieval mà tutor từ chối
   sạch. Học viên gặp ca này sẽ kết luận "tutor không biết gì", tệ hơn cả một câu trả lời sai.
-- **Nếu chỉ được fix một thứ:** over-refusal. Sửa system prompt buộc tutor **tách vế và trả
-  lời phần có nguồn trước khi từ chối phần còn lại**. Một thay đổi này đánh trúng 2/3 fail.
+- **Nếu chỉ được fix một thứ:** over-refusal. Nhóm **đã thử** đúng fix này (candidate v2,
+  quy tắc 2b) và **nó không đủ** — xem mục 6. Bài học: `VLT-024`/`VLT-026` không phải lỗi
+  tutor "ngại trả lời" mà là **retrieval không tìm ra vế trả lời được**. Đòn bẩy tiếp theo
+  là tầng retrieval (thử lại bằng từ khoá lân cận khi truy vấn trượt), không phải prompt.
 - **Chạy lại eval khi nào:** mỗi lần đổi system prompt, đổi model, hoặc thêm tài liệu vào
   corpus — chi phí chỉ ~$0.18/vòng nên không có lý do gì để trì hoãn. Người đọc kết quả: người
   sở hữu rubric (không phải người sửa prompt — tránh tự chấm bài mình).
