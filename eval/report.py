@@ -33,11 +33,15 @@ def read_labels(path="labels.csv"):
 LABEL_KEY = os.environ.get("EVAL_LABEL_KEY", "evalkit-labels")
 
 def main():
-    results = read_jsonl("results.jsonl")
+    # Cho phép chỉ định file results và file HTML đầu ra:
+    #   python3 eval/report.py [results.jsonl] [report.html]
+    results_path = sys.argv[1] if len(sys.argv) > 1 else "results.jsonl"
+    out_path = sys.argv[2] if len(sys.argv) > 2 else "report.html"
+    results = read_jsonl(results_path)
     verdicts = {v["scenario_id"]: v for v in read_jsonl("verdicts.jsonl")}
     labels = read_labels()
     if not results:
-        print("Chưa có results.jsonl — report sẽ trống. Chạy python3 eval/run_eval.py trước.")
+        print("Chưa có %s — report sẽ trống. Chạy python3 eval/run_eval.py trước." % results_path)
     # Gộp 3 nguồn thành 1 list row để nhúng vào HTML
     rows = []
     for r in results:
@@ -52,9 +56,9 @@ def main():
                      "human_label": labels.get(sid, "")})
     html = (TEMPLATE.replace("__DATA__", json.dumps(rows, ensure_ascii=False))
                     .replace("__LABEL_KEY__", LABEL_KEY))
-    with open("report.html", "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
-    print("Đã sinh report.html (%d dòng dữ liệu). Mở bằng: open report.html" % len(rows))
+    print("Đã sinh %s (%d dòng dữ liệu). Mở bằng: open %s" % (out_path, len(rows), out_path))
 
 # Giao diện: mọi logic render/lọc/gán nhãn chạy hoàn toàn trong trình duyệt.
 TEMPLATE = """<!doctype html><html lang="vi"><head><meta charset="utf-8">

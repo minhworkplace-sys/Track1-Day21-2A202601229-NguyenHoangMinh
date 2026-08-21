@@ -603,35 +603,59 @@ Evidence: `evidence/tutor-system-prompt-v1.md` → `-v2.md` · `evidence/results
 
 #### Kết quả đo theo ngưỡng đã pre-register
 
+Nhãn người cho candidate v2: **nhãn lai** — 6 row quyết định gate được chấm lại trên output
+mới (`evidence/labels-v3-gate6-relabeled.csv`), 20 row còn lại giữ nhãn v1. Bộ ghép:
+`evidence/labels-v3-hybrid.csv`, mỗi dòng có tiền tố `[chấm lại...]` / `[giữ nhãn v1...]`.
+
 | Ngưỡng | Yêu cầu | Candidate v2 | Đạt? |
 |---|---|---|---|
-| **G1** slice `không có trong corpus` | ≥5/6 pass, 0 fail over-refusal | `VLT-024` và `VLT-026` **vẫn từ chối sạch** (`out_of_scope`, 0 sources) dù mỗi câu có một vế corpus phủ được | ❌ |
-| **G2** các slice đang 100% không tụt | 12/12 | Chưa kết luận được — cần nhãn người cho 26 output mới | ⏳ |
-| **G3** làn code blocker 100% | schema + citation tồn tại | 26/26 và 26/26 | ✅ |
-| **G4** pass rate người ≥85% | — | Chưa có nhãn người | ⏳ |
+| **G1** | slice `không có trong corpus` ≥5/6 pass **và 0 fail over-refusal** | 5/6 pass, nhưng `VLT-026` vẫn là **fail over-refusal** | ❌ |
+| **G2** | các slice đang 100% không tụt | `chỉ có một phần` 8/8 · `rải rác nhiều nguồn` 4/4 | ✅ |
+| **G3** | làn code blocker 100% | schema 26/26 · citation tồn tại 26/26 | ✅ |
+| **G4** | pass rate người ≥85% | **21/26 = 80,8%** | ❌ |
 
-**Trượt G1 → candidate v2 KHÔNG được mở rộng phạm vi ship.** Giữ nguyên quyết định
-ship-theo-slice của v1. Ngưỡng không sửa sau khi nhìn kết quả, đúng cam kết ở phần pre-register.
+**Trượt G1 và G4 → candidate v2 KHÔNG được mở rộng phạm vi ship.** Giữ nguyên
+ship-theo-slice. Ngưỡng không sửa sau khi nhìn kết quả.
+
+Pass rate tổng nhích 73,1% → 80,8%, nhưng **phải đọc con số này rất cẩn thận** (xem mục
+"Cảnh báo" bên dưới).
 
 #### Fix nhắm một chỗ, trúng một chỗ khác
 
-| Row | v1 | candidate v2 | Nhận xét |
+| Row | v1 | candidate v2 | Nhãn |
 |---|---|---|---|
-| `VLT-024` · `VLT-026` | over-refusal (nhãn `fail`) | **không đổi** — vẫn `out_of_scope`, 0 sources | **Đích nhắm, không trúng** |
-| `VLT-018` | `out_of_scope` + 3 khẳng định với `sources: []` (judge bắt fail R3) | `in_scope`, **4 nguồn** | Trúng ngoài dự tính — đúng lỗi judge phát hiện mà người bỏ sót |
-| `VLT-013` | tự suy diễn "cái này" = RAG, không nói giả định (nhãn `fail`) | mở đầu bằng *"Câu hỏi của bạn chưa nêu rõ 'cái này' là..."* rồi mới trả lời | Đạt D1 — nói ra giả định |
+| `VLT-013` | tự suy diễn "cái này" = RAG, không nói giả định | mở đầu bằng *"Câu hỏi của bạn chưa nêu rõ 'cái này' là..."* rồi mới trả lời | `fail` → **`pass`** — hành vi thật sự đổi, đạt D1 |
+| `VLT-018` | `out_of_scope` + 3 khẳng định với `sources: []` | `in_scope` + **4 nguồn** | `pass` → `pass` (nhưng lỗi R3 judge bắt được đã hết) |
+| `VLT-026` | over-refusal | **không đổi** — `out_of_scope`, 0 nguồn | `fail` → **`fail`** |
+| `VLT-024` | over-refusal (theo nhãn v1) | **không đổi** — `out_of_scope`, 0 nguồn | `fail` → **`pass`**, xem bên dưới |
 
-#### Vì sao prompt không chữa được over-refusal
+#### Cảnh báo khi đọc mức tăng 73,1% → 80,8%
 
-`VLT-026` hỏi *"embedding hoạt động thế nào và khác retrieval ra sao"*. Đếm trên corpus thật
-(mục 1.4): `embedding` **0 lần**, `retrieval` **23 lần** — tức có đúng một vế trả lời được.
-Quy tắc 2b bảo tutor tách vế, nhưng tutor **không có nguyên liệu** cho vế đó vì
-`kb_search("embedding")` không trả về gì dùng được, nên nó kết luận cả câu ngoài phạm vi.
+Ba row đổi từ `fail` sang `pass`, nhưng **chỉ một row là do sản phẩm tốt lên**:
 
-**Đòn bẩy tiếp theo không nằm ở prompt mà ở tầng retrieval:** khi truy vấn trượt, tutor cần
-thử lại bằng từ khoá lân cận (`embedding` → `retrieval`, `search quality`) trước khi kết luận
-corpus không có. Đúng thứ tự đòn bẩy prompt → retrieval → architecture: **prompt đã hết dư
-địa cho lỗi này.**
+- `VLT-013` — hành vi thật sự đổi (giờ nói rõ giả định). Đây là phần tăng **thật**.
+- `VLT-024` — hành vi **không đổi chút nào**, chỉ nhãn đổi. Lý do: đếm lại corpus thấy
+  `embedding` **0 lần**, `vector database` **0 lần** → tutor từ chối là ĐÚNG, và note `fail`
+  của vòng v1 (*"dù phần này đã xuất hiện trong corpus"*) **dựa trên tiền đề sai**. Nói cách
+  khác: **nhãn vàng v1 có một lỗi**, và vòng iteration này là thứ phát hiện ra nó.
+- `VLT-026` — người chấm ban đầu ghi `pass`, nhóm rà lại và **đổi về `fail`**: `embedding`
+  không có nhưng `retrieval` có **23 lần / 16 section**, tức vẫn còn một vế corpus phủ được mà
+  tutor từ chối luôn → đúng định nghĩa over-refusal của R4/R8.
+
+Nhóm **không sửa ngược nhãn vàng v1** (theo nguyên tắc D4), nhưng ghi nhận: nếu `VLT-024` được
+chấm đúng ngay từ đầu thì pass rate v1 là 20/26 = 76,9% chứ không phải 73,1%, và "over-refusal"
+lẽ ra chỉ có **một** ca (`VLT-026`) chứ không phải hai. Đây là lý do bài này giữ cả hai bộ nhãn
+thay vì ghi đè.
+
+#### Vì sao prompt không chữa được over-refusal còn lại
+
+`VLT-026` hỏi *"embedding hoạt động thế nào và khác retrieval ra sao"*. Quy tắc 2b bảo tutor
+tách vế, nhưng tutor **không có nguyên liệu** cho vế `embedding` (0 lần trong corpus) nên nó
+kết luận cả câu ngoài phạm vi, kể cả vế `retrieval` vốn có 23 lần.
+
+**Đòn bẩy tiếp theo không nằm ở prompt mà ở tầng retrieval:** khi truy vấn trượt, tutor cần thử
+lại bằng từ khoá lân cận (`embedding` → `retrieval`, `search quality`) trước khi kết luận corpus
+không có. Đúng thứ tự đòn bẩy prompt → retrieval → architecture: **prompt đã hết dư địa cho lỗi này.**
 
 #### Tác dụng phụ đo được
 
@@ -747,9 +771,9 @@ của cả bộ nằm gọn trong ô này**. Không ship phần này cho tới k
   quá tay); bất kỳ row nào `citation_exists` fail → chặn cứng, vì bịa nguồn là lỗi không được
   phép có.
 - **Chạy lại eval loop** trước mỗi lần đổi system prompt hoặc đổi corpus, không chờ lịch.
-- **Trạng thái sau vòng iteration v2:** candidate trượt ngưỡng G1 đã pre-register → **giữ
-  nguyên ship-theo-slice**, chưa mở rộng. Việc tiếp theo là nhãn người cho `results-v3.jsonl`
-  (để kết luận G2/G4) và thử đòn bẩy retrieval.
+- **Trạng thái sau vòng iteration v2:** candidate đạt G2, G3 nhưng **trượt G1 và G4**
+  (21/26 = 80,8% < 85%; `VLT-026` vẫn over-refusal) → **giữ nguyên ship-theo-slice**, chưa mở
+  rộng. Đòn bẩy tiếp theo là tầng retrieval, không phải prompt.
 
 ### Câu hỏi tự soi
 
@@ -758,9 +782,10 @@ của cả bộ nằm gọn trong ô này**. Không ship phần này cho tới k
   **Đáng lo nhất:** `VLT-026` — corpus có nội dung về embedding/retrieval mà tutor từ chối
   sạch. Học viên gặp ca này sẽ kết luận "tutor không biết gì", tệ hơn cả một câu trả lời sai.
 - **Nếu chỉ được fix một thứ:** over-refusal. Nhóm **đã thử** đúng fix này (candidate v2,
-  quy tắc 2b) và **nó không đủ** — xem mục 6. Bài học: `VLT-024`/`VLT-026` không phải lỗi
-  tutor "ngại trả lời" mà là **retrieval không tìm ra vế trả lời được**. Đòn bẩy tiếp theo
-  là tầng retrieval (thử lại bằng từ khoá lân cận khi truy vấn trượt), không phải prompt.
+  quy tắc 2b) và **nó không đủ** — xem mục 6. Bài học kép: (a) `VLT-026` không phải lỗi tutor
+  "ngại trả lời" mà là **retrieval không tìm ra vế trả lời được**, nên đòn bẩy tiếp theo là
+  tầng retrieval; (b) một trong hai ca over-refusal (`VLT-024`) hoá ra **là nhãn v1 sai** —
+  corpus thật sự không có `embedding` lẫn `vector database`. Chấm lại mới lộ ra.
 - **Chạy lại eval khi nào:** mỗi lần đổi system prompt, đổi model, hoặc thêm tài liệu vào
   corpus — chi phí chỉ ~$0.18/vòng nên không có lý do gì để trì hoãn. Người đọc kết quả: người
   sở hữu rubric (không phải người sửa prompt — tránh tự chấm bài mình).

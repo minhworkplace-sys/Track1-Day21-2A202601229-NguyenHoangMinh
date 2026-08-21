@@ -145,3 +145,24 @@ theo kết quả.
 **0 lần** — tutor không có nguyên liệu cho vế "trả lời được", nên quy tắc tách vế vô dụng.
 Đòn bẩy tiếp theo là retrieval, không phải prompt. Không có eval loop thì sẽ tưởng fix đã
 chạy và đi tiếp.
+
+### Phase 6 — chấm lại nhãn cho candidate v2 (nhãn lai)
+
+Chấm lại **6 row quyết định gate** trên output mới, giữ nhãn v1 cho 20 row còn lại. AI đo
+độ giống văn bản v1 vs v2 (row giống nhất chỉ 51%) để chỉ ra rằng bê nguyên nhãn cũ sang sẽ
+làm hỏng chính con số G2/G4 — từ đó chọn phương án nhãn lai và ghi rõ giới hạn.
+
+**AI bắt được một chỗ tôi chấm quá tay.** Tôi chấm cả 6 row là `pass`, trong đó `VLT-024` và
+`VLT-026` là hai ca hành vi **không đổi gì** so với v1 (vẫn `out_of_scope`, 0 nguồn). AI đếm
+lại corpus và tách hai ca:
+
+- `VLT-024` — `embedding` 0 lần, `vector database` 0 lần → từ chối là ĐÚNG. Nhãn `pass` mới
+  hợp lý, và **nhãn `fail` của vòng v1 mới là cái sai** (note v1 viết "dù phần này đã xuất
+  hiện trong corpus" — không đúng).
+- `VLT-026` — `retrieval` có 23 lần / 16 section → vẫn còn một vế corpus phủ được mà tutor từ
+  chối luôn. **Tôi đổi lại về `fail`**, đúng chữ của R4/R8.
+
+Kết quả sau khi sửa: 21/26 = 80,8%, trượt G4 (≥85%) và trượt G1 (còn 1 fail over-refusal).
+
+Bài học: người chấm cũng là người thiết kế fix thì rất dễ nới tay đúng vào những row mình
+muốn nó pass. Đối chiếu lại bằng số đếm trên corpus là cách rẻ nhất để tự bắt lỗi mình.

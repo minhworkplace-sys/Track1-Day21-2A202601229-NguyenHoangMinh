@@ -88,7 +88,7 @@ nguồn` đạt **12/12 = 100%**, slice `đủ trong 1 nguồn` không fail nào
 | Pass rate người | 19/26 = **73%** (19 pass · 4 uncertain · 3 fail) |
 | Judge agreement | **77%** tổng · **87%** trong đúng làn judge phụ trách (2 vòng calibrate) |
 | Chi phí 1 vòng eval | **≈ $0.18** (tutor $0.158 + judge ~$0.02) · 18,1s/câu |
-| Fix ưu tiên số 1 | Over-refusal. Đã thử fix bằng system prompt (candidate v2) — **không đủ**: nguyên nhân thật nằm ở tầng retrieval, không phải prompt |
+| Vòng iteration v2 | Fix over-refusal bằng system prompt: đạt G2/G3, **trượt G1 + G4** (80,8% < 85%) → không mở rộng ship. Nguyên nhân thật nằm ở tầng retrieval |
 
 Chi tiết: [deliverables/REPORT.md](deliverables/REPORT.md) mục 6–7.
 

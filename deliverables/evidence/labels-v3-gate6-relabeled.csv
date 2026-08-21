@@ -1,0 +1,7 @@
+"scenario_id","label","note"
+"VLT-013","pass","nêu được vấn đề cần clarifynne6"
+"VLT-018","pass","nêu được các bước cần làm"
+"VLT-021","pass","hỏi thêm về model để đưa ra câu trả lời chính xác nhất"
+"VLT-022","pass","các tiêu chí đều đạt"
+"VLT-024","pass","corpus thật sự KHÔNG có cả embedding lẫn vector database (đếm lại: 0 lần) -> từ chối là đúng; note fail của vòng v1 dựa trên tiền đề sai"
+"VLT-026","fail","over-refusal: từ chối cả câu trong khi vế retrieval corpus phủ được (23 lần/16 section) — fail R4+R8 theo đúng chữ rubric"
