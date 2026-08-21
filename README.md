@@ -19,7 +19,7 @@ README này là hướng dẫn duy nhất: bước nào gõ lệnh gì, file nà
 | Họ tên | **Nguyễn Hoàng Minh** |
 | MSSV | 2A202601229 |
 | Track / Ngày | Track 1 · Day 20–21 — AI Evaluation |
-| Repo nộp | https://github.com/minhworkplace-sys/Track1-Day21-2A202601229-NguyenHoangMinh |
+| Repo nộp | https://github.com/minhworkplace-sys/Track1_Day21_2A202601229_NguyenHoangMinh |
 
 ### Thành viên nhóm
 
