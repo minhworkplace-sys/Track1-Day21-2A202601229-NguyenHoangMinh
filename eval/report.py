@@ -27,6 +27,11 @@ def read_labels(path="labels.csv"):
         return {r["scenario_id"]: r.get("label", "").strip()
                 for r in csv.DictReader(f) if r.get("scenario_id")}
 
+# Mỗi vòng chấm nên có key localStorage riêng: nhãn của vòng trước không đè lên
+# vòng sau (report.html là file:// nên mọi vòng dùng chung một origin trong trình duyệt).
+# Đổi vòng: EVAL_LABEL_KEY=evalkit-labels-v3 python3 eval/report.py
+LABEL_KEY = os.environ.get("EVAL_LABEL_KEY", "evalkit-labels")
+
 def main():
     results = read_jsonl("results.jsonl")
     verdicts = {v["scenario_id"]: v for v in read_jsonl("verdicts.jsonl")}
@@ -45,7 +50,8 @@ def main():
                      "verdict": verdicts.get(sid, {}).get("verdict"),
                      "rationale": verdicts.get(sid, {}).get("rationale", ""),
                      "human_label": labels.get(sid, "")})
-    html = TEMPLATE.replace("__DATA__", json.dumps(rows, ensure_ascii=False))
+    html = (TEMPLATE.replace("__DATA__", json.dumps(rows, ensure_ascii=False))
+                    .replace("__LABEL_KEY__", LABEL_KEY))
     with open("report.html", "w", encoding="utf-8") as f:
         f.write(html)
     print("Đã sinh report.html (%d dòng dữ liệu). Mở bằng: open report.html" % len(rows))
@@ -77,7 +83,7 @@ Lọc verdict: <select id="flt"><option value="">Tất cả</option><option>pass
 <button onclick="exportCsv()">Export labels.csv</button><span id="stat"></span></header>
 <main id="list"></main>
 <script>
-var ROWS=__DATA__, KEY="evalkit-labels";
+var ROWS=__DATA__, KEY="__LABEL_KEY__";
 var saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 // tương thích ngược: bản cũ lưu value là string label thuần -> coi như {label, note:""}
 function norm(v){return typeof v=="string"?{label:v,note:""}:(v||{label:"",note:""})}
