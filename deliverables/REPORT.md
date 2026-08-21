@@ -12,18 +12,72 @@ results-vN.jsonl, labels.csv, judge-prompt-vN.md, verdicts-vN.jsonl, braintrust-
 > Lưới input = trục "ai hỏi" × "hỏi kiểu gì". LLM giúp sinh input, con người kiểm soát
 > coverage. Trả lời các câu hỏi sau rồi vẽ lưới của bạn.
 
-- AI Tutor của bạn phục vụ những **nhóm người dùng** nào? (học viên mới, học viên đang
-  làm bài, học viên ôn lại, PM khác team...?)
-- Mỗi nhóm có những **ý định (intent)** hỏi nào? (hỏi khái niệm, xin ví dụ, hỏi ngoài
-  lề, xin đáp án, hỏi mơ hồ...?)
-- Ô nào trong lưới là **rủi ro cao** nhất (trả lời sai thì hại người học)? Ô nào **tần
-  suất cao** nhất?
+### 1.1 Chọn dimension (bước 1–2 của s29)
 
-### Lưới của bạn
+Kiểm tra dùng để chọn (s28): **đổi value của biến → hành vi đúng của tutor phải đổi
+theo**. Không đổi thì đó chỉ là paraphrase, không phải dimension.
 
-| Nhóm user \ Intent | ... | ... | ... |
-|---|---|---|---|
-| ... | | | |
+| Dimension | Values | Đổi value thì hành vi đúng đổi thế nào |
+|---|---|---|
+| **D1. Persona** (giai đoạn học) | học viên mới · đang làm capstone · ôn lại trước khi nộp · PM ngoài team | Học viên mới cần giải thích từ nền; người đang làm capstone cần câu trả lời gọn + trỏ đúng slide; PM ngoài team hỏi câu không thuộc corpus khoá |
+| **D2. Intent** | hỏi khái niệm · tra cứu slide cụ thể · xin ví dụ/áp dụng · xin đáp án bài tập · hỏi ngoài phạm vi | Từ "trả lời + trích nguồn" sang "từ chối khéo + trỏ về nội dung học" — hành vi đúng đảo ngược hoàn toàn |
+| **D3. Độ phủ corpus** | có slide trả lời trực tiếp · phải tổng hợp nhiều tài liệu · corpus chưa đề cập | Trực tiếp thì cite 1 nguồn; tổng hợp thì phải cite nhiều `doc_id#section_id`; chưa đề cập thì **phải nói không biết** thay vì suy từ trí nhớ model |
+| **D4. Độ rõ câu hỏi** | rõ, đủ ngữ cảnh · thiếu ngữ cảnh · nhiều ý trong một câu | Thiếu ngữ cảnh → hành vi đúng là **hỏi lại**, không phải đoán rồi trả lời |
+
+**Đã loại khỏi dimension:** độ dài câu hỏi, formal/informal, tiếng Việt/tiếng Anh —
+đổi các biến này thì nội dung câu trả lời đúng **không đổi**, nên chúng là biến thể
+diễn đạt (dùng ở bước 5, khi LLM paraphrase), không phải trục coverage.
+
+### 1.2 Lưới của bạn (D1 × D2)
+
+■ chọn test · ▨ loại (tổ hợp phi lý) · □ cân nhắc sau
+
+| Persona \ Intent | Hỏi khái niệm | Tra cứu slide | Xin ví dụ/áp dụng | Xin đáp án bài tập | Hỏi ngoài phạm vi |
+|---|---|---|---|---|---|
+| **Học viên mới** | ■ tần suất cao nhất | ■ | ■ | □ | ■ |
+| **Đang làm capstone** | ■ | ■ **rủi ro cao** | ■ | ■ **rủi ro cao nhất** | □ |
+| **Ôn lại trước khi nộp** | ■ | ■ | □ | □ | ▨ |
+| **PM ngoài team** | ■ | ▨ không biết slide nào | □ | ▨ không làm bài tập | ■ |
+
+**Ô loại và vì sao:**
+
+- *Ôn lại × hỏi ngoài phạm vi* — người đang ôn bám sát nội dung thi, hỏi lạc đề là
+  hành vi hiếm đến mức không đáng chiếm slot trong dataset.
+- *PM ngoài team × tra cứu slide* — họ không dự lớp nên không có khái niệm "slide s47".
+- *PM ngoài team × xin đáp án* — họ không nộp bài capstone.
+
+### 1.3 Ô rủi ro cao và ô tần suất cao
+
+| | Ô | Vì sao |
+|---|---|---|
+| **Rủi ro cao nhất** | Đang làm capstone × xin đáp án bài tập | Tutor bịa đáp án thì vừa dạy sai vừa tiếp tay gian lận. Học viên đang gấp sẽ tin ngay mà không kiểm chứng — failure cost cao nhất trong toàn lưới |
+| **Rủi ro cao** | Đang làm capstone × tra cứu slide (kết hợp D3 = phải tổng hợp) | Đây là ô dễ sinh lỗi **citation không support claim**: tutor trả lời đúng ý nhưng gắn sai `doc_id#section_id`. Người học mở nguồn ra không thấy nội dung đó → mất niềm tin vào toàn hệ thống |
+| **Rủi ro cao** | Mọi persona × D3 = corpus chưa đề cập | Tutor phải nói "không có trong tài liệu". Nếu nó suy từ trí nhớ model thì vi phạm đúng cam kết lõi của sản phẩm |
+| **Tần suất cao nhất** | Học viên mới × hỏi khái niệm | Chiếm phần lớn lưu lượng thật; là ô quyết định ấn tượng đầu tiên về chất lượng tutor |
+
+### 1.4 Phễu tổ hợp (bước 3–4 của s29)
+
+```
+D1 (4) × D2 (5) = 20 ô
+  → loại 3 ô phi lý                      = 17 ô
+  → chốt 12 ô đánh dấu ■                 = 12 ô
+  → nhân D3/D4 ở các ô rủi ro cao        ≈ 16–18 scenario
+  → Phase 2 viết thành ~20 dòng dataset.jsonl
+```
+
+**Constraint đời thật đã thêm** (bước 4 — làm scenario bớt "sạch"):
+
+- Câu hỏi không nêu rõ đang hỏi bài nào ("eval này ổn chưa anh?") — buộc tutor dựa
+  vào `metadata.slide` hoặc hỏi lại.
+- Học viên dùng thuật ngữ khác slide (nói "chấm điểm tự động" thay vì "LLM judge").
+- Gộp nhiều ý trong một câu — kiểm tra tutor có trả lời thiếu vế không.
+- Xin đáp án kèm lý do gây áp lực ("sắp hết hạn nộp rồi") — thử xem tutor có mềm lòng
+  mà phá rào không.
+
+Ba loại scenario theo s30: phần lớn là **representative**, cố ý **over-sample
+challenge** ở ô rủi ro cao (xin đáp án, tổng hợp nhiều nguồn, câu mơ hồ), và giữ vài
+**critical regression** (citation không support claim, nói kiến thức ngoài corpus
+thành nội dung đã dạy).
 
 ---
 
