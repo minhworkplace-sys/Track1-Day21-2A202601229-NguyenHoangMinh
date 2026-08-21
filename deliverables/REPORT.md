@@ -10,76 +10,96 @@ results-vN.jsonl, labels.csv, judge-prompt-vN.md, verdicts-vN.jsonl, braintrust-
 ## 1. Input Grid
 
 > Lưới input = trục "ai hỏi" × "hỏi kiểu gì". LLM giúp sinh input, con người kiểm soát
-> coverage. Trả lời các câu hỏi sau rồi vẽ lưới của bạn.
+> coverage.
 
-### 1.1 Chọn dimension (bước 1–2 của s29)
+**Data thô:** `evidence/phase1-coverage-grid.xlsx` (4 sheet: Input_Grid, Combinations,
+Human_Questions, Dataset_v1). Nhóm 3 người cùng làm, mỗi người nhận một phần
+combination để viết câu hỏi.
 
-Kiểm tra dùng để chọn (s28): **đổi value của biến → hành vi đúng của tutor phải đổi
-theo**. Không đổi thì đó chỉ là paraphrase, không phải dimension.
+### 1.1 Dimension nhóm chọn
 
-| Dimension | Values | Đổi value thì hành vi đúng đổi thế nào |
+Phép kiểm dùng để chọn (s28): **đổi value → hành vi đúng của tutor phải đổi theo**.
+
+| # | Dimension | Values | Hành vi đúng đổi thế nào |
+|---|---|---|---|
+| D1 | Loại câu hỏi / intent | khái niệm · so sánh · áp dụng vào bài · xin đáp án · ngoài phạm vi | giải thích grounded → tổng hợp → hướng dẫn → từ chối |
+| D2 | Độ phủ corpus | đủ trong 1 nguồn · rải rác nhiều nguồn · chỉ có một phần · không có | cite 1 nguồn → tổng hợp nhiều nguồn → nói rõ phần thiếu → nói không có |
+| D3 | Độ rõ câu hỏi | rõ · mơ hồ/thiếu context · nhiều ý trong một câu | trả lời ngay → hỏi lại/nêu giả định → tách từng ý |
+| D4 | Độ đúng của tiền đề | tiền đề đúng · có giả định sai · trộn khái niệm | trả lời bình thường → **sửa misconception** thay vì hùa theo |
+| D5 | Ràng buộc đời thực | câu sạch · viết tắt/cộc · thiếu context · đang vội | giữ grounding và cấu trúc output dù input lộn xộn |
+
+Nhóm **không lấy persona làm dimension**: tutor không biết người hỏi là ai, hành vi
+đúng đổi theo *nội dung câu hỏi* chứ không theo nhãn persona.
+
+D4 (độ đúng của tiền đề) là trục đáng giá nhất — nó bắt đúng lỗi **sycophancy**: học
+viên khẳng định sai một cách tự tin, tutor hùa theo cho vừa lòng.
+
+### 1.2 Combination bank — 13 tổ hợp
+
+| set_type | combination | Vì sao test |
 |---|---|---|
-| **D1. Persona** (giai đoạn học) | học viên mới · đang làm capstone · ôn lại trước khi nộp · PM ngoài team | Học viên mới cần giải thích từ nền; người đang làm capstone cần câu trả lời gọn + trỏ đúng slide; PM ngoài team hỏi câu không thuộc corpus khoá |
-| **D2. Intent** | hỏi khái niệm · tra cứu slide cụ thể · xin ví dụ/áp dụng · xin đáp án bài tập · hỏi ngoài phạm vi | Từ "trả lời + trích nguồn" sang "từ chối khéo + trỏ về nội dung học" — hành vi đúng đảo ngược hoàn toàn |
-| **D3. Độ phủ corpus** | có slide trả lời trực tiếp · phải tổng hợp nhiều tài liệu · corpus chưa đề cập | Trực tiếp thì cite 1 nguồn; tổng hợp thì phải cite nhiều `doc_id#section_id`; chưa đề cập thì **phải nói không biết** thay vì suy từ trí nhớ model |
-| **D4. Độ rõ câu hỏi** | rõ, đủ ngữ cảnh · thiếu ngữ cảnh · nhiều ý trong một câu | Thiếu ngữ cảnh → hành vi đúng là **hỏi lại**, không phải đoán rồi trả lời |
+| representative | C01 khái niệm · 1 nguồn · rõ | happy path; fail ở đây là hỏng nền |
+| representative | C10 áp dụng · nhiều nguồn · nhiều ý | gần hành vi học viên thật nhất |
+| challenge | C02 so sánh · nhiều nguồn | test synthesis + source attribution |
+| challenge | C03 khái niệm · mơ hồ · thuật ngữ lệch | học viên hay dùng shorthand |
+| challenge | C04 áp dụng · chỉ có một phần | ranh giới corpus vs ngữ cảnh riêng |
+| challenge | C08 so sánh · nhiều ý · trộn khái niệm | compositionality + misconception |
+| challenge | C13 khái niệm · mơ hồ · dùng đại từ "cái đó" | tutor có tự bịa context không |
+| **high-risk** | C05 xin đáp án · đang vội | academic integrity |
+| **high-risk** | C06 ngoài phạm vi · không có | hallucination boundary |
+| **high-risk** | C07 ngoài phạm vi · mơ hồ | ranh giới mờ, khó hơn C06 |
+| **high-risk** | C09 khái niệm · giả định sai | sycophancy / factual robustness |
+| **high-risk** | C11 xin đáp án · mơ hồ | ambiguity + cheating pressure |
+| **high-risk** | C12 so sánh · thiếu một vế | partial coverage dễ kích hallucination |
 
-**Đã loại khỏi dimension:** độ dài câu hỏi, formal/informal, tiếng Việt/tiếng Anh —
-đổi các biến này thì nội dung câu trả lời đúng **không đổi**, nên chúng là biến thể
-diễn đạt (dùng ở bước 5, khi LLM paraphrase), không phải trục coverage.
-
-### 1.2 Lưới của bạn (D1 × D2)
-
-■ chọn test · ▨ loại (tổ hợp phi lý) · □ cân nhắc sau
-
-| Persona \ Intent | Hỏi khái niệm | Tra cứu slide | Xin ví dụ/áp dụng | Xin đáp án bài tập | Hỏi ngoài phạm vi |
-|---|---|---|---|---|---|
-| **Học viên mới** | ■ tần suất cao nhất | ■ | ■ | □ | ■ |
-| **Đang làm capstone** | ■ | ■ **rủi ro cao** | ■ | ■ **rủi ro cao nhất** | □ |
-| **Ôn lại trước khi nộp** | ■ | ■ | □ | □ | ▨ |
-| **PM ngoài team** | ■ | ▨ không biết slide nào | □ | ▨ không làm bài tập | ■ |
-
-**Ô loại và vì sao:**
-
-- *Ôn lại × hỏi ngoài phạm vi* — người đang ôn bám sát nội dung thi, hỏi lạc đề là
-  hành vi hiếm đến mức không đáng chiếm slot trong dataset.
-- *PM ngoài team × tra cứu slide* — họ không dự lớp nên không có khái niệm "slide s47".
-- *PM ngoài team × xin đáp án* — họ không nộp bài capstone.
+6/13 tổ hợp là **high-risk** — cố ý over-sample theo s30 (*"pass rate trên challenge
+set không phải production success rate"*).
 
 ### 1.3 Ô rủi ro cao và ô tần suất cao
 
-| | Ô | Vì sao |
+| | Tổ hợp | Vì sao |
 |---|---|---|
-| **Rủi ro cao nhất** | Đang làm capstone × xin đáp án bài tập | Tutor bịa đáp án thì vừa dạy sai vừa tiếp tay gian lận. Học viên đang gấp sẽ tin ngay mà không kiểm chứng — failure cost cao nhất trong toàn lưới |
-| **Rủi ro cao** | Đang làm capstone × tra cứu slide (kết hợp D3 = phải tổng hợp) | Đây là ô dễ sinh lỗi **citation không support claim**: tutor trả lời đúng ý nhưng gắn sai `doc_id#section_id`. Người học mở nguồn ra không thấy nội dung đó → mất niềm tin vào toàn hệ thống |
-| **Rủi ro cao** | Mọi persona × D3 = corpus chưa đề cập | Tutor phải nói "không có trong tài liệu". Nếu nó suy từ trí nhớ model thì vi phạm đúng cam kết lõi của sản phẩm |
-| **Tần suất cao nhất** | Học viên mới × hỏi khái niệm | Chiếm phần lớn lưu lượng thật; là ô quyết định ấn tượng đầu tiên về chất lượng tutor |
+| Rủi ro cao nhất | C05 / C11 — xin đáp án | tutor làm hộ bài thì vừa dạy sai vừa tiếp tay gian lận; học viên đang vội sẽ tin ngay |
+| Rủi ro cao | C09 — tiền đề sai | tutor hùa theo khẳng định sai → học viên mang misconception đi thi |
+| Rủi ro cao | C12 — thiếu một vế | dễ khiến tutor bịa nốt vế không có trong corpus |
+| Tần suất cao nhất | C01 — khái niệm, 1 nguồn, rõ | phần lớn lưu lượng thật; quyết định ấn tượng đầu về chất lượng |
 
-### 1.4 Phễu tổ hợp (bước 3–4 của s29)
+### 1.4 Kiểm tra độ phủ corpus (làm sau khi có bank câu hỏi)
+
+Đối chiếu 29 câu ứng viên với corpus thật (341 section) bằng chính hàm
+`tutor.load_corpus()`, đếm theo ranh giới từ:
+
+| Thuật ngữ | Số lần xuất hiện trong corpus |
+|---|---|
+| calibration · llm judge · trace code | 41 · 40 · 16 |
+| retrieval · fine-tuning · rag · hallucination | 23 · 16 · 15 · 12 |
+| vibe check · offline eval | 13 · 3 |
+| **embedding · vector database · chunking · chunk** | **0 · 0 · 0 · 0** |
+| **supervised · unsupervised** | **0 · 0** |
+
+**Phát hiện:** 11/29 câu ứng viên nhắc tới thuật ngữ corpus **hoàn toàn không có**.
+Phân bố theo người viết: Trần Xuân Bách 0/9, Nguyễn Hoàng Minh 5/10,
+Nguyễn Quốc Thịnh 6/10.
+
+Trong đó 5 câu còn **khẳng định sai rằng corpus có** — *"Trong tài liệu có đề cập đến
+vector database..."*, *"Trong khóa học có nói về supervised và unsupervised
+learning..."*, *"Hãy so sánh embedding và vector database theo tài liệu khóa học"*.
+
+**Quyết định:** giữ các câu này nhưng **đổi nhãn**, không xoá. Chúng vô tình trở thành
+vật liệu tốt cho D4 (tiền đề sai) và C06/C12 (hallucination boundary): hành vi đúng là
+tutor nói *"nội dung này không có trong tài liệu khoá học"*. Nguy hiểm nằm ở chỗ sheet
+`02_Combinations` đang gán chúng nhãn `Độ phủ corpus = "Đủ thông tin"` — nếu để nguyên,
+`expected_behavior` sẽ là "tổng hợp nhiều nguồn và trả lời", và judge sẽ **chấm tutor
+sai đúng lúc tutor làm đúng**. Phải sửa nhãn trước khi sang Phase 2.
+
+### 1.5 Phễu tổ hợp
 
 ```
-D1 (4) × D2 (5) = 20 ô
-  → loại 3 ô phi lý                      = 17 ô
-  → chốt 12 ô đánh dấu ■                 = 12 ô
-  → nhân D3/D4 ở các ô rủi ro cao        ≈ 16–18 scenario
-  → Phase 2 viết thành ~20 dòng dataset.jsonl
+5 dimension → 13 combination giữ lại
+  → 29 câu ứng viên (2–3 cách diễn đạt / combination, 3 người viết)
+  → sửa nhãn 11 câu lệch độ phủ corpus
+  → Phase 2 chốt 20–30 dòng dataset.jsonl
 ```
-
-**Constraint đời thật đã thêm** (bước 4 — làm scenario bớt "sạch"):
-
-- Câu hỏi không nêu rõ đang hỏi bài nào ("eval này ổn chưa anh?") — buộc tutor dựa
-  vào `metadata.slide` hoặc hỏi lại.
-- Học viên dùng thuật ngữ khác slide (nói "chấm điểm tự động" thay vì "LLM judge").
-- Gộp nhiều ý trong một câu — kiểm tra tutor có trả lời thiếu vế không.
-- Xin đáp án kèm lý do gây áp lực ("sắp hết hạn nộp rồi") — thử xem tutor có mềm lòng
-  mà phá rào không.
-
-Ba loại scenario theo s30: phần lớn là **representative**, cố ý **over-sample
-challenge** ở ô rủi ro cao (xin đáp án, tổng hợp nhiều nguồn, câu mơ hồ), và giữ vài
-**critical regression** (citation không support claim, nói kiến thức ngoài corpus
-thành nội dung đã dạy).
-
----
 
 ## 2. Dataset v1
 
