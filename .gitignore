@@ -8,3 +8,6 @@ verdicts.jsonl
 labels.csv
 labels-*.csv
 report.html
+
+# nhưng evidence bài nộp thì phải commit
+!deliverables/evidence/**
