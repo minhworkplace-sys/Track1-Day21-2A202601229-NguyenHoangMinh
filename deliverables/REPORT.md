@@ -261,7 +261,12 @@ nhưng dính ≥2 điểm trừ (R9/R10) → `uncertain`. Sạch hết → `pass
 
 ### Chấm chéo phát hiện gì — 3 quyết định đã chốt
 
-Đối chiếu 26 nhãn thấy **hai cặp row cùng failure mode nhưng khác nhãn**. Đây đúng là chỗ
+**Vòng chấm độc lập trước đó cho agreement 7/25 = 28%** (Bách vs Thịnh — chi tiết ở mục 7.2
+và `evidence/labels-README.md`). Bất đồng gần như toàn bộ nằm ở một câu hỏi duy nhất: citation
+/ quote sai có phải blocker không. Nhóm họp cả 3 người, đi từng case, chốt `labels-group.csv`
+làm nhãn vàng — rubric dưới đây là phần **viết thành văn** những gì đã chốt trong buổi đó.
+
+Đối chiếu 26 nhãn đã thống nhất thấy **hai cặp row cùng failure mode nhưng khác nhãn**. Đây đúng là chỗ
 rubric v1 còn hở; nhóm chốt trước khi viết judge prompt, vì nếu để nguyên thì judge sẽ học
 đúng cái mâu thuẫn này.
 
@@ -606,11 +611,22 @@ failure mode, **không đủ để đo pass rate tin cậy** trên từng ô; (c
 
 #### 2. Quá trình đồng thuận của con người
 
-- **Agreement vòng độc lập (nhãn tổng): không đo được.** Ba thành viên chấm độc lập rồi hợp
-  nhất thẳng thành `labels-group.csv`; file nhãn riêng từng người không giữ lại, nên
-  `eval/agreement.py` không chạy được. **Đây là thiếu sót quy trình của nhóm** — vòng sau phải
-  lưu `labels-<tên>.csv` trước khi hợp nhất.
-- Bù lại, nhóm đo được **tính nhất quán nội bộ của nhãn đã hợp nhất**: ép 26 note vào bảng
+- **Agreement vòng độc lập: 7/25 = 28%** (Bách vs Thịnh, đo bằng `eval/agreement.py` trên
+  `evidence/labels-round1-bach.csv` + `labels-round1-thinh.csv`). Thành viên thứ ba không còn
+  file nhãn độc lập, nên con số là của một cặp chứ không phải cả ba.
+- **28% là rất thấp — và đó là phát hiện có giá trị nhất của Phase 3.** Đọc note thì thấy
+  ngay nguyên nhân: Thịnh chấm `fail` 17/25 row với lý do gần như chỉ có `citation` hoặc
+  `scope`, tức **coi citation/quote không chuẩn là blocker**. Bách chấm 18/25 `pass` với cùng
+  bộ câu trả lời đó. Hai người **không đọc khác nhau — họ dùng hai rubric khác nhau**, mà
+  thời điểm đó rubric chưa tồn tại.
+- **Mâu thuẫn lớn nhất:** citation/quote sai có phải blocker không. Đây đúng là câu hỏi mà
+  nhóm sau này phải chốt thành **D3** (*quote verbatim là điểm trừ, không phải blocker*).
+- **Nhóm xử lý bằng cách nào:** họp cả 3 người, đi từng case bất đồng, siết định nghĩa chứ
+  không đổi thang điểm → chốt `labels-group.csv` là nhãn vàng cả 3 đồng ý
+  (`evidence/labels-round2-group.csv`). Khoảng cách tới nhãn vàng: Bách 16/25 = 64%,
+  Thịnh 11/25 = 44% — tức bản hợp nhất **không phải là nhãn của riêng ai**, mà là kết quả
+  dịch chuyển của cả hai phía sau thảo luận.
+- Vòng 2 (sau hợp nhất), nhóm đo thêm **tính nhất quán nội bộ của nhãn đã thống nhất**: ép 26 note vào bảng
   rubric R1–R11 thì lộ ra **2 cặp row cùng failure mode nhưng khác nhãn**
   (`VLT-013`/`VLT-021` — tự suy diễn khi mơ hồ; `VLT-022`/`VLT-011` — bỏ im một vế).
 - **Mâu thuẫn lớn nhất:** khi nào "tự chọn cách hiểu" là chấp nhận được. Một phía coi mọi suy

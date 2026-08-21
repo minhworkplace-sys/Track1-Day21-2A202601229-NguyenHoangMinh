@@ -1,0 +1,26 @@
+scenario_id,label,note
+VLT-001,fail,fail: citation
+VLT-002,fail,fail: citation
+VLT-003,pass,
+VLT-004,fail,fail: citation
+VLT-005,fail,scope
+VLT-006,fail,scope + citation
+VLT-007,fail,scope
+VLT-008,fail,scope
+VLT-009,fail,scope
+VLT-010,fail,scope
+VLT-011,pass,
+VLT-012,pass,
+VLT-013,fail,scope
+VLT-014,pass,
+VLT-016,pass,
+VLT-017,fail,citation
+VLT-018,pass,
+VLT-019,fail,citation
+VLT-020,fail,scope
+VLT-021,fail,scope
+VLT-022,pass,
+VLT-023,fail,scope
+VLT-024,fail,citation
+VLT-025,pass,context
+VLT-026,fail,citation

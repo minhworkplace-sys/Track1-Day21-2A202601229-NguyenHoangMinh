@@ -1,0 +1,26 @@
+scenario_id,label,note
+VLT-001,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-002,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-003,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-004,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-005,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-006,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-007,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-008,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-009,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-010,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-011,fail,chuẩn hoá id từ labels-Bach.csv
+VLT-012,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-013,uncertain,chuẩn hoá id từ labels-Bach.csv
+VLT-014,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-016,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-017,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-018,fail,chuẩn hoá id từ labels-Bach.csv
+VLT-019,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-020,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-021,uncertain,chuẩn hoá id từ labels-Bach.csv
+VLT-022,uncertain,chuẩn hoá id từ labels-Bach.csv
+VLT-023,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-024,fail,chuẩn hoá id từ labels-Bach.csv
+VLT-025,pass,chuẩn hoá id từ labels-Bach.csv
+VLT-026,fail,chuẩn hoá id từ labels-Bach.csv
