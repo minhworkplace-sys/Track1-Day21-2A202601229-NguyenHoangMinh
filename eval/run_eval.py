@@ -22,7 +22,16 @@ import tracing
 _tracer = tracing.init_tracer()
 
 # Bảng giá USD / 1M tokens (input, output) — theo platform constants.ts
-PRICING = {"deepseek-v4-flash": (0.44, 1.32), "gpt-4o-mini": (0.15, 0.60)}
+PRICING = {"deepseek-v4-flash": (0.44, 1.32), "gpt-4o-mini": (0.15, 0.60),
+           "gemini-3.1-flash-lite": (0.25, 1.50),
+           "gemini-3.7-flash": (0.375, 1.875)}
+# Lưu ý: giá trên là giá NIÊM YẾT (standard tier). Nếu bạn đang chạy free tier thì
+# chi phí thực tế phát sinh là $0 — cột cost_usd là chi phí QUY ĐỔI ở giá thật,
+# dùng để trả lời "chạy ở quy mô thật tốn bao nhiêu". Ghi rõ điều này trong REPORT.md.
+
+# Nghỉ giữa hai dòng dataset (giây). Mặc định 0 — đặt EVAL_SLEEP_S trong .env khi
+# dùng free tier: mỗi dòng có thể tốn tới max_steps request vì tutor là agent loop.
+SLEEP_S = float(os.environ.get("EVAL_SLEEP_S", "0"))
 
 def estimate_cost_usd(model, usage):
     """Ước tính chi phí 1 lượt chạy; model lạ (chưa có giá) thì trả None."""
@@ -85,6 +94,8 @@ def main():
             rec.update(error=str(e))
             print("LỖI: %s" % e)
         results.append(rec)
+        if SLEEP_S and i < len(rows):
+            time.sleep(SLEEP_S)  # giãn nhịp — free tier giới hạn request/phút
 
     with open("results.jsonl", "w", encoding="utf-8") as f:
         for rec in results:

@@ -86,6 +86,18 @@ PROVIDERS = {
 BASE_URL = os.environ.get("EVAL_BASE_URL")  # None = gọi thẳng provider
 MODEL = os.environ.get("EVAL_MODEL", "deepseek/deepseek-v4-flash")
 
+# Retry khi provider trả 429 (hết quota/RPM) hoặc 5xx — chỉnh qua .env nếu cần
+MAX_RETRIES = int(os.environ.get("EVAL_MAX_RETRIES", "5"))   # tổng số lần gọi
+RETRY_BASE_S = float(os.environ.get("EVAL_RETRY_BASE_S", "2"))  # chờ 2s, 4s, 8s...
+RETRY_MAX_S = float(os.environ.get("EVAL_RETRY_MAX_S", "60"))   # trần mỗi lần chờ
+
+def retry_after_seconds(resp):
+    """Đọc header Retry-After (giây). Không có / không phải số -> None."""
+    try:
+        return float(resp.headers.get("Retry-After", ""))
+    except ValueError:
+        return None
+
 def resolve_provider(model):
     """-> (base_url, api_key, model_id_thật). Gateway nếu EVAL_BASE_URL được đặt."""
     if BASE_URL:
@@ -206,16 +218,31 @@ def chat(messages, model=None, temperature=0, max_tokens=800, tools=None):
         payload["tool_choice"] = "auto"
     t0 = time.time()
     last_err = None
-    for attempt in range(3):  # gateway/provider thỉnh thoảng trả body JSON bị cắt ngang (200 nhưng không parse được) — retry
+    # Retry hai loại lỗi tạm thời:
+    #   - 429 (hết quota / vượt RPM — rất hay gặp khi dùng free tier) và 5xx:
+    #     chờ theo backoff mũ rồi gọi lại. Ưu tiên header Retry-After nếu provider gửi.
+    #   - body 200 nhưng JSON bị cắt ngang: gọi lại ngay (đợi 1s).
+    # Không retry 4xx khác (401 sai key, 400 payload hỏng) — thử lại cũng vậy.
+    for attempt in range(MAX_RETRIES):
         resp = requests.post(base_url + "/chat/completions", json=payload, timeout=120,
                              headers={"Authorization": "Bearer " + key})
+        if resp.status_code == 429 or resp.status_code >= 500:
+            last_err = "HTTP %d: %s" % (resp.status_code, resp.text[:200])
+            if attempt == MAX_RETRIES - 1:
+                break
+            wait = retry_after_seconds(resp) or min(RETRY_BASE_S * 2 ** attempt, RETRY_MAX_S)
+            print("\n  [HTTP %d — chờ %.1fs rồi thử lại (lần %d/%d)]"
+                  % (resp.status_code, wait, attempt + 1, MAX_RETRIES - 1),
+                  end="", flush=True)
+            time.sleep(wait)
+            continue
         resp.raise_for_status()
         try:
             return resp.json(), time.time() - t0
         except ValueError as e:
             last_err = e
             time.sleep(1)
-    raise RuntimeError(f"Provider trả body không parse được JSON sau 3 lần thử: {last_err}")
+    raise RuntimeError(f"Gọi provider thất bại sau {MAX_RETRIES} lần thử: {last_err}")
 
 def parse_json_content(content):
     """Model đôi khi bọc JSON trong ``` fence — lột ra trước khi parse.
