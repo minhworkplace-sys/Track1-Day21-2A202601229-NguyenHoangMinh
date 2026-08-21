@@ -78,3 +78,49 @@ một câu khác mạnh hơn trong cùng ô.
 - Ô mỏng đi sau khi REJECT: **C08** chỉ còn câu 14, mà câu đó lại phải rewrite. Nhóm
   cân nhắc viết thêm một câu C08 dùng cặp khái niệm corpus có thật.
 
+---
+
+## Phụ lục — Quyết định cuối của nhóm (rà lại toàn bộ 29 câu)
+
+Cột `Human decision` của sheet `03_Human_Questions` đã điền đủ 29/29 dòng. Kết quả
+**không trùng hoàn toàn** với bảng đề xuất ở trên — đó là mục đích của vòng rà.
+
+| | Đề xuất ở trên | Quyết định cuối |
+|---|---|---|
+| KEEP | 16 | **22** (15 giữ nguyên + 7 chỉ sửa nhãn) |
+| REWRITE | 9 | **3** |
+| REJECT | 4 | **4** (không đổi) |
+
+### Ba chỗ khác với đề xuất
+
+1. **q10 → KEEP** (đề xuất: REWRITE). Lý do bác: đề xuất cho rằng corpus chỉ phủ một
+   phần chủ đề *"tại sao retrieval quan trọng trong RAG"* nên tín hiệu từ chối bị lẫn
+   giữa liêm chính và thiếu dữ liệu. Đếm lại thì
+   `course/module-06-code-based-evaluation.md` nói thẳng *"If the right documents
+   weren't retrieved, the generation step never had a chance"*, cộng định nghĩa RAG ở
+   glossary cùng file → corpus trả lời được, tín hiệu vẫn sạch. Giữ nguyên câu chữ.
+
+2. **q14 → KEEP** (đề xuất: REWRITE). Lý do bác: đề xuất khẳng định corpus *"chưa bao
+   giờ so sánh RAG với fine-tuning như cơ chế đưa kiến thức"*. Sai — `hamel-evals.md`
+   có đúng một câu so sánh trực tiếp: *"Fine-tuning is best for learning syntax, style,
+   and rules, whereas techniques like RAG supply the model with context or up-to-date
+   facts."* Chỉ nhãn `D2` sai (phải là "chỉ có một phần" vì vế hallucination không có
+   kết luận), câu chữ không cần đổi.
+
+3. **q04 → REWRITE** (đề xuất: KEEP). Lý do bác: q04 trùng **toàn bộ 5 trục** với q03 —
+   cùng cặp khái niệm vibe check / offline eval, cùng D1–D5. Hai câu như vậy tốn tiền
+   chạy gấp đôi mà không thêm ô nào. Viết lại thành câu ba ý (khác nhau ở đâu · làm cái
+   nào trước · nhóm ba người chia việc ra sao) để lấy thêm trục D3 *nhiều ý trong một câu*.
+
+### Phân biệt REWRITE với "chỉ sửa nhãn"
+
+Bảng đề xuất ở trên gộp hai việc khác nhau vào cùng nhãn REWRITE: đổi **câu chữ** và đổi
+**nhãn metadata**. Quyết định cuối tách ra, vì chỉ việc đầu mới làm câu hỏi khác đi:
+
+- **REWRITE** (3 câu — q04, q18, q25): câu chữ thay đổi, có cột `Human rewrite / final input`.
+- **KEEP (sửa nhãn)** (7 câu — q11, q12, q14, q19, q20, q26, q28): giữ nguyên từng chữ
+  học viên viết, chỉ sửa `dimension_values` cho khớp corpus thật. q11 còn đổi ô C06 → C12
+  vì vế đầu của nó in-scope, không phải câu ngoài phạm vi thuần.
+
+Con số cuối: 22 KEEP + 3 REWRITE = 25 câu, cộng 1 câu viết thêm cho ô C08 = **26 dòng**
+trong `dataset-v1.jsonl`.

@@ -96,6 +96,9 @@ MODEL = os.environ.get("EVAL_MODEL", "deepseek/deepseek-v4-flash")
 MAX_RETRIES = int(os.environ.get("EVAL_MAX_RETRIES", "5"))   # tổng số lần gọi
 RETRY_BASE_S = float(os.environ.get("EVAL_RETRY_BASE_S", "2"))  # chờ 2s, 4s, 8s...
 RETRY_MAX_S = float(os.environ.get("EVAL_RETRY_MAX_S", "60"))   # trần mỗi lần chờ
+# Trần token cho câu trả lời. Trần cũ 2000 cắt ngang JSON ở 2/26 câu của results-v1
+# (VLT-008, VLT-019) — fail format do cấu hình của mình chứ không phải model viết sai.
+ANSWER_MAX_TOKENS = int(os.environ.get("EVAL_ANSWER_MAX_TOKENS", "3000"))
 
 def retry_after_seconds(resp):
     """Đọc header Retry-After (giây). Không có / không phải số -> None."""
@@ -323,7 +326,7 @@ def call_tutor(question, slide=None, max_steps=6):
     for step in range(max_steps):
         # Vòng cuối: rút tools đi để ép model trả lời (và ép JSON) dù nó còn muốn gọi
         last_round = step == max_steps - 1
-        data, latency = chat(messages, max_tokens=2000,
+        data, latency = chat(messages, max_tokens=ANSWER_MAX_TOKENS,
                              tools=None if last_round else [KB_SEARCH_TOOL])
         latency_total += latency
         u = data.get("usage", {})
