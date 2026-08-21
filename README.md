@@ -40,20 +40,57 @@ README này là hướng dẫn duy nhất: bước nào gõ lệnh gì, file nà
 Tutor và judge cố ý đặt ở **hai nhà cung cấp khác nhau**, để judge không chấm chính
 output do cùng một model sinh ra.
 
-### Đóng góp của tôi
+### Đóng góp của tôi — Nguyễn Hoàng Minh
 
-> _Điền phần này sau khi nhóm chia việc — ghi cụ thể bạn làm phase nào, quyết định gì._
+Cách nhóm làm việc: phần nào ghi **"cá nhân"** thì mỗi người tự làm độc lập trước, sau đó
+họp và chốt **một hướng chung**. Dưới đây là phần cá nhân của tôi và những gì tôi đem vào
+buổi họp chốt.
 
-- Phase 1 (Input Grid / dataset):
-- Phase 2 (chạy tutor, đọc trace):
-- Phase 3 (chấm nhãn người, agreement):
-- Phase 4–5 (judge prompt, calibration):
-- Phase 6–7 (iteration, verdict):
+- **Phase 1 (Input Grid / dataset)** — cá nhân: viết **10/29 câu ứng viên** (câu 10–19), phủ
+  các ô C05–C10, tức nhóm ô rủi ro cao: tiền đề sai (`D4`), câu mơ hồ, câu lai nửa trong nửa
+  ngoài corpus. Vào họp: 5/10 câu của tôi tự đề xuất REWRITE, 2 câu REJECT — chủ động loại
+  câu của chính mình khi thấy trùng chức năng (`phase1-question-review.md`). Hai câu tôi viết
+  trở thành ca đáng giá nhất của cả bộ: `VLT-016` (sycophancy RAG/fine-tuning) và `VLT-013`
+  (câu mơ hồ "cái này") — một pass sạch, một fail sạch.
+- **Phase 2 (chạy tutor, đọc trace)** — chạy `run_eval.py` trên dataset v1 (26 row, 2 vòng:
+  `results-v1`, `results-v2`), dựng tracing LangSmith project `ai-evaluation`, và ép stdout
+  UTF-8 để pipeline chạy được trên Windows (commit `411fefc`).
+- **Phase 3 (chấm nhãn người)** — cá nhân: chấm độc lập toàn bộ scenario, sau đó họp hợp nhất
+  thành `labels-group.csv`. Việc tôi làm ở buổi chốt: ánh xạ id `S###` → `VLT-###` giữa 29 câu
+  ứng viên và dataset v1 (`evidence/label-id-mapping.md`), và ép 26 note vào bảng rubric để
+  soi tính nhất quán — chính bước này lộ ra 2 cặp row cùng failure mode mà nhãn khác nhau.
+- **Phase 4–5 (judge prompt, calibration)** — viết `judge_prompt` v2 (tách R3/R4/R5/R8 thành 4
+  mục độc lập) và v3 (thêm Bước 0 phân loại answer từ chối), chạy 2 vòng calibrate: **69% →
+  77%**, và tách agreement thô thành **87% trong đúng làn judge**. Sửa `eval/judge.py` để nạp
+  text thật của section đã cite vào prompt — trước đó judge phải chấm groundedness mà không
+  được đọc nguồn.
+- **Phase 6–7 (verdict)** — dựng scorecard 3 làn, phát hiện **R4 = 100% của judge là số giả**
+  (bỏ sót 2 ca over-refusal) và đề xuất thu hồi R4 khỏi judge, trả về cho người. Đề xuất gate
+  theo slice thay vì một ngưỡng tổng; nhóm chốt **SHIP WITH CONDITIONS**.
+
+**Quyết định tôi đưa ra nhóm mà nhóm bác:** đề xuất sửa nhãn `VLT-018` thành `fail` cho khớp
+bằng chứng (tutor từ chối rồi vẫn đưa 3 khẳng định với `sources: []`). Nhóm giữ nhãn `pass`
+với lý do nhãn người là thước đo judge, không sửa ngược theo judge. Ghi trong `ai-support-log.md`.
 
 ### Verdict tóm tắt
 
-> _Điền sau khi hoàn thành mục 7 của `deliverables/REPORT.md` — một quyết định rõ ràng:
-> ship / không ship / ship có điều kiện, kèm số liệu chống lưng._
+**SHIP WITH CONDITIONS — ship theo slice.**
+
+Mở cho học viên các câu **có nguồn trong corpus**: slice `chỉ có một phần` + `rải rác nhiều
+nguồn` đạt **12/12 = 100%**, slice `đủ trong 1 nguồn` không fail nào. Làn code blocker
+(schema, citation tồn tại) sạch **26/26**.
+
+**Chặn** slice `không có trong corpus`: **3/6 = 50%** — toàn bộ 3 fail của cả bộ nằm gọn ở
+ô này, chủ yếu là **over-refusal** (tutor từ chối lan sang cả phần corpus CÓ).
+
+| | |
+|---|---|
+| Pass rate người | 19/26 = **73%** (19 pass · 4 uncertain · 3 fail) |
+| Judge agreement | **77%** tổng · **87%** trong đúng làn judge phụ trách (2 vòng calibrate) |
+| Chi phí 1 vòng eval | **≈ $0.18** (tutor $0.158 + judge ~$0.02) · 18,1s/câu |
+| Fix ưu tiên số 1 | Over-refusal — buộc tutor tách vế, trả lời phần có nguồn trước khi từ chối phần còn lại |
+
+Chi tiết: [deliverables/REPORT.md](deliverables/REPORT.md) mục 6–7.
 
 ## Cấu trúc repo
 
