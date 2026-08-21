@@ -3,7 +3,8 @@
 Cách dùng (chạy từ root repo):
   python3 eval/judge.py                # chấm tất cả các row
   python3 eval/judge.py sc-01 sc-03    # chỉ chấm các scenario_id được chọn
-Judge dùng prompt trong eval/judge_prompt.md (placeholder {{input}} {{answer}} {{sources}}).
+Judge dùng prompt trong eval/judge_prompt.md
+(placeholder {{input}} {{answer}} {{sources}} {{cited_sections}}).
 Model judge mặc định khác model tutor (EVAL_JUDGE_MODEL, mặc định openai/gpt-4o-mini)
 để tránh tự chấm chéo cùng một model.
 """
@@ -44,6 +45,24 @@ def read_labels(path="labels.csv"):
         return {r["scenario_id"]: r["label"].strip().lower()
                 for r in csv.DictReader(f) if r.get("label", "").strip()}
 
+_CORPUS_TEXT = None
+
+def cited_sections_text(rec, max_chars=1200):
+    """Text thật của các section mà tutor đã cite — judge cần đọc nguồn mới
+    chấm được groundedness (R3), chứ nhìn mỗi doc_id thì chỉ đoán."""
+    global _CORPUS_TEXT
+    if _CORPUS_TEXT is None:
+        _CORPUS_TEXT = {(s["doc_id"], s["section_id"]): s["text"] for s in tutor.load_corpus()}
+    nl = chr(10)
+    out = []
+    for src in rec.get("output", {}).get("sources", []) or []:
+        doc_id, section_id = src.get("doc_id"), src.get("section_id")
+        text = _CORPUS_TEXT.get((doc_id, section_id))
+        head = "### {}#{}".format(doc_id, section_id)
+        body = "[KHÔNG TỒN TẠI TRONG CORPUS]" if text is None else text[:max_chars]
+        out.append(head + nl + body)
+    return (nl + nl).join(out) if out else "[tutor không trích nguồn nào]"
+
 def build_judge_prompt(rec, template):
     """Nhồi input/answer/sources của 1 row vào template.
     Nếu row có slide context thì gắn vào input — judge phải chấm theo đúng
@@ -56,16 +75,18 @@ def build_judge_prompt(rec, template):
                          ensure_ascii=False, indent=2)
     return (template.replace("{{input}}", input_text)
                     .replace("{{answer}}", answer)
-                    .replace("{{sources}}", sources))
+                    .replace("{{sources}}", sources)
+                    .replace("{{cited_sections}}", cited_sections_text(rec)))
 
 def judge_row(rec, template):
     prompt = build_judge_prompt(rec, template)
     data, latency = tutor.chat([{"role": "user", "content": prompt}],
-                               model=JUDGE_MODEL, max_tokens=500)
+                               model=JUDGE_MODEL, max_tokens=900)
     content = data["choices"][0]["message"]["content"]
     out = tutor.parse_json_content(content)
     return {"scenario_id": rec["scenario_id"], "verdict": out.get("verdict", "uncertain"),
             "score": out.get("score"), "rationale": out.get("rationale", ""),
+            "criteria": out.get("criteria", {}),   # verdict từng tiêu chí R3/R4/R5/R8
             "issues": out.get("issues", []), "raw_content": content,
             "usage": data.get("usage", {}), "latency_s": round(latency, 2)}
 
