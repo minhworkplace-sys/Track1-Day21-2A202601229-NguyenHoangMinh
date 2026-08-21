@@ -12,6 +12,49 @@ README này là hướng dẫn duy nhất: bước nào gõ lệnh gì, file nà
 > **File lab tổng (kim chỉ nam, có timeline + rubric chấm):** đọc kèm
 > `day21-lab-ai-evaluation-capstone.md` do lớp phát.
 
+## Bài nộp
+
+| | |
+|---|---|
+| Họ tên | **Nguyễn Hoàng Minh** |
+| MSSV | 2A202601229 |
+| Track / Ngày | Track 1 · Day 20–21 — AI Evaluation |
+| Repo nộp | https://github.com/minhworkplace-sys/Track1-Day21-2A202601229-NguyenHoangMinh |
+
+### Thành viên nhóm
+
+| # | Họ tên | MSSV |
+|---|---|---|
+| 1 | Nguyễn Hoàng Minh | 2A202601229 |
+| 2 | Nguyễn Quốc Thịnh | 2A202601675 |
+| 3 | Trần Xuân Bách | 2A202601093 |
+
+### Cấu hình đã dùng
+
+| | |
+|---|---|
+| Tutor (sản phẩm được chấm) | `openrouter/google/gemini-3.7-flash` |
+| Judge (model chấm tự động) | `openai/gpt-4o-mini` |
+| Tracing | LangSmith — project `ai-evaluation` (link trong `deliverables/evidence/braintrust-link.md`) |
+
+Tutor và judge cố ý đặt ở **hai nhà cung cấp khác nhau**, để judge không chấm chính
+output do cùng một model sinh ra.
+
+### Đóng góp của tôi
+
+> _Điền phần này sau khi nhóm chia việc — ghi cụ thể bạn làm phase nào, quyết định gì._
+
+- Phase 1 (Input Grid / dataset):
+- Phase 2 (chạy tutor, đọc trace):
+- Phase 3 (chấm nhãn người, agreement):
+- Phase 4–5 (judge prompt, calibration):
+- Phase 6–7 (iteration, verdict):
+
+### Verdict tóm tắt
+
+> _Điền sau khi hoàn thành mục 7 của `deliverables/REPORT.md` — một quyết định rõ ràng:
+> ship / không ship / ship có điều kiện, kèm số liệu chống lưng._
+
 ## Cấu trúc repo
 
 | Thư mục / file | Vai trò |
