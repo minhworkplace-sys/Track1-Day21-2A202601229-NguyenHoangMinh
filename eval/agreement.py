@@ -11,6 +11,12 @@ In ra: % 3 người đồng thuận hoàn toàn, % từng cặp, và danh sách 
 import csv
 import sys
 
+# Windows: console mặc định cp1252 không in được tiếng Việt — print dòng đầu là
+# UnicodeEncodeError, chết trước cả khi gọi API. Ép stdout/stderr về UTF-8.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):   # Python 3.7+
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 
 def read_labels(path):
     with open(path, encoding="utf-8") as f:

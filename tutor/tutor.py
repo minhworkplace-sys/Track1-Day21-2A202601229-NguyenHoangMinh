@@ -7,7 +7,13 @@ platform, chỉ khác môi trường chạy (Python local thay vì Next.js).
 Dùng trực tiếp trong REPL:  python3 -i tutor/tutor.py  ->  ask_tutor("câu hỏi")
 Hoặc được run_eval.py import để chạy cả dataset.
 """
-import json, math, os, re, time, unicodedata
+import json, math, os, re, sys, time, unicodedata
+
+# Windows: console mặc định cp1252 không in được tiếng Việt — print dòng đầu là
+# UnicodeEncodeError, chết trước cả khi gọi API. Ép stdout/stderr về UTF-8.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):   # Python 3.7+
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 import requests
 

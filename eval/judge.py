@@ -10,6 +10,12 @@ Model judge mặc định khác model tutor (EVAL_JUDGE_MODEL, mặc định ope
 import csv, json, os, sys
 from pathlib import Path
 
+# Windows: console mặc định cp1252 không in được tiếng Việt — print dòng đầu là
+# UnicodeEncodeError, chết trước cả khi gọi API. Ép stdout/stderr về UTF-8.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):   # Python 3.7+
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # tutor.py nằm ở tutor/ (khu vực sản phẩm) — thêm vào sys.path để import được
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tutor"))
 

@@ -6,7 +6,13 @@ của trình duyệt (dạng {label, note}; đọc được cả bản cũ lưu 
 nút "Export labels.csv" tải về CSV 3 cột scenario_id,label,note để đưa lại cho
 judge.py so agreement.
 """
-import csv, json, os
+import csv, json, os, sys
+
+# Windows: console mặc định cp1252 không in được tiếng Việt — print dòng đầu là
+# UnicodeEncodeError, chết trước cả khi gọi API. Ép stdout/stderr về UTF-8.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):   # Python 3.7+
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 def read_jsonl(path):
     if not os.path.exists(path):
