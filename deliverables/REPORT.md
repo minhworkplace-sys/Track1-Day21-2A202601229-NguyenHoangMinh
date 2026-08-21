@@ -376,7 +376,20 @@ nào được trích dẫn"*. Từ chối mà không trích nguồn là hành vi
 đang áp luật groundedness lên câu không có khẳng định nào để ground. Sửa đúng một thứ đó
 (Bước 0) → +8 điểm phần trăm, 2/3 case hết oan.
 
-### Confusion matrix (dán output judge.py)
+### Confusion matrix từng vòng (dán output judge.py)
+
+**Vòng 1 — `judge_prompt-v2.md`** (`evidence/verdicts-v2.jsonl`):
+
+```
+Confusion matrix (hàng = judge, cột = nhãn người):
+           |      pass      fail uncertain
+      pass |        16         1         4
+      fail |         3         2         0
+ uncertain |         0         0         0
+Agreement: 18/26 = 69%
+```
+
+**Vòng 2 — `judge_prompt-v3.md`** (`evidence/verdicts-v3.jsonl`):
 
 ```
 Confusion matrix (hàng = judge, cột = nhãn người):
@@ -386,6 +399,25 @@ Confusion matrix (hàng = judge, cột = nhãn người):
  uncertain |         0         0         0
 Agreement: 20/26 = 77%
 ```
+
+Đọc chéo hai ma trận: ô `judge=fail × người=pass` giảm **3 → 1** — đúng 2 case từ chối bị
+oan được gỡ. Ba ô còn lại không đổi, tức thay đổi ở v3 **chỉ chạm đúng thứ định chạm**,
+không kéo theo hiệu ứng phụ chỗ khác.
+
+### Diff judge prompt giữa hai vòng
+
+File đầy đủ: `evidence/judge_prompt-v2-to-v3.diff` (**+31 / −3 dòng**). Nội dung thay đổi:
+
+| Chỗ sửa | v2 | v3 |
+|---|---|---|
+| **Bước 0** (mới) | — | Thêm hẳn một mục đầu prompt: phân loại answer (A) có nội dung bài học / (B) từ chối–hỏi lại, và tuyên bố "với (B), `sources` rỗng là ĐÚNG" |
+| R3 điều kiện fail | *"`sources` rỗng dù answer đưa ra khẳng định..."* | *"**answer loại (A)** đưa khẳng định... mà `sources` rỗng"* — gắn điều kiện vào loại answer |
+| R3 cách chấm | (không có) | Thêm: chỉ cần MỘT con số / quan hệ nhân quả / khuyến nghị không tìm thấy trong section → fail; cấm chấm pass vì "nghe đúng" |
+| R4 | (không có) | Thêm: không fail R4 chỉ vì answer loại (B) không có `sources` |
+| R8 | (không có) | Thêm: từ chối rõ ràng toàn bộ câu hỏi = đã xử lý hết các vế |
+
+Một thay đổi khái niệm (Bước 0) kéo theo 4 chỗ sửa cục bộ — đúng nguyên tắc "sửa ít một
+thứ mỗi vòng" của lab, và nhờ vậy quy được +8 điểm phần trăm về đúng một nguyên nhân.
 
 Judge **không bao giờ trả `uncertain`** — hàng uncertain trống hoàn toàn. Nó luôn ép về
 pass/fail, trong khi người dùng `uncertain` 4 lần. Đây là chênh lệch cấu trúc, không phải
@@ -495,6 +527,37 @@ người bắt được. Không được dùng con số R4 của judge làm căn
 
 Latency 18s là số đáng lo với trải nghiệm học viên hỏi trong lúc xem slide — nhưng chưa
 phải tiêu chí gate ở v1 vì rubric chưa có tiêu chí tốc độ.
+
+### Ngưỡng gate — khai báo thời điểm chốt
+
+**Khai báo trung thực: gate dưới đây được chốt SAU khi nhóm đã nhìn kết quả của
+dataset v1.** Đây là điểm yếu về phương pháp và nhóm ghi rõ chứ không giấu — ngưỡng
+chốt sau khi thấy số liệu luôn có rủi ro được uốn cho vừa kết quả đang có. Cụ thể ở
+đây: gate "theo slice" ra đời sau khi nhóm thấy 3 fail dồn hết vào một ô. Người đọc
+report cần tính đến điều đó khi đọc verdict.
+
+Cái nhóm làm được để bù: **pre-register ngưỡng cho vòng candidate tiếp theo, chốt
+TRƯỚC khi chạy.**
+
+> **Ngưỡng pre-register cho candidate v2 — chốt lúc `2026-08-21 19:22 +0700`,
+> trước khi tutor v2 (bản sửa over-refusal) được chạy.**
+>
+> Candidate v2 chỉ được ship rộng (bỏ chặn slice `không có trong corpus`) khi đạt
+> **đồng thời** cả 4 điều kiện, đo trên đúng dataset v1 26 row:
+>
+> | # | Điều kiện | Ngưỡng |
+> |---|---|---|
+> | G1 | Slice `không có trong corpus` | **≥ 5/6 pass**, và **0 fail** kiểu over-refusal |
+> | G2 | Các slice đang 100% (`chỉ có một phần`, `rải rác nhiều nguồn`) | **không tụt** — vẫn 12/12 |
+> | G3 | Làn code blocker (R1 schema, R2 citation tồn tại) | **100%**, không thương lượng |
+> | G4 | Pass rate người toàn bộ | **≥ 85%** (hiện 73%) |
+>
+> Nếu candidate v2 đạt G1–G3 nhưng trượt G4 → vẫn giữ ship-theo-slice, không mở rộng.
+> Ngưỡng này **không được sửa sau khi nhìn kết quả v2**; muốn đổi thì phải ghi thành
+> một mục mới trong report kèm lý do, không sửa đè lên dòng này.
+
+Commit chứa dòng pre-register này là mốc thời gian kiểm chứng được: `git log` cho thấy
+nó được commit trước khi có bất kỳ file `results-v3.jsonl` nào trong `evidence/`.
 
 ### Quyết định gate
 

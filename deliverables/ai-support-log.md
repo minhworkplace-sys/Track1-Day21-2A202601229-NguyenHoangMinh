@@ -9,11 +9,27 @@
 | 1 | Setup môi trường (trước Phase 1) | Claude Code dò repo xem thiếu gì, tạo `.env`, test 3 API key, vá retry 429 và lỗi UTF-8 trên Windows | Chạy thật: gọi API thấy response, xem trace lên LangSmith, chạy `tests/test_eval_kit.py` 44 pass |
 | 2 | Phase 1 — lưới coverage + 29 câu ứng viên | Nhóm dùng AI dựng `phase1-coverage-grid.xlsx` (5 dimension, 13 combination, 2–3 paraphrase mỗi ô). Cả 3 sheet đều mang nhãn "AI DRAFT — HUMAN REVIEW REQUIRED" | Đối chiếu 29 câu với corpus thật bằng `tutor.load_corpus()` — phát hiện 11 câu nhắc thuật ngữ corpus có **0 lần** xuất hiện |
 | 3 | Phase 1 — viết mục 1 REPORT.md | Claude Code chuyển lưới từ Excel sang REPORT.md và chạy kiểm tra độ phủ corpus | Số đếm chạy lại được bằng lệnh trong mục 1.4; file Excel gốc nằm trong `evidence/` để đối chiếu |
-| 4 | | | |
-| 3 | | | |
+| 4 | Phase 2 — chạy tutor 2 vòng | Claude Code chẩn đoán 2/26 row `results-v1` vỡ JSON; xác định nguyên nhân là trần `max_tokens=2000` cắt ngang output chứ không phải model viết sai | Mở `raw_content` của `VLT-008`/`VLT-019` thấy cắt giữa chừng; nâng trần lên 3000, chạy lại `results-v2` sạch 26/26 |
+| 5 | Phase 3 — ánh xạ id nhãn | Claude Code khớp nội dung 29 câu ứng viên (`S###`) với 26 row dataset v1 (`VLT-###`) để `judge.py` đối chiếu được nhãn | Kiểm bằng script: tập id trong `labels.csv` khớp 100% với `results.jsonl`; bảng ánh xạ từng dòng trong `evidence/label-id-mapping.md` để nhóm rà tay |
+| 6 | Phase 3 — rubric R1–R11 | Claude Code rút ngược tiêu chí từ **26 note chấm tay của nhóm**, không tự nghĩ tiêu chí mới; mỗi tiêu chí phải gắn ít nhất một `scenario_id` thật | Rà từng tiêu chí xem có row thật làm ví dụ không; 2 chỗ nhóm chấm không nhất quán được đưa ra họp chốt (D1, D2) chứ AI không tự quyết |
+| 7 | Phase 4 — judge prompt v2/v3 | Claude Code viết prompt theo rubric của nhóm, và sửa `eval/judge.py` nạp text nguồn thật vào prompt | Chạy thật 2 vòng, đối chiếu confusion matrix với nhãn vàng: 69% → 77%; đọc từng verdict để tìm nguyên nhân, không tin số tổng |
+| 8 | Phase 6–7 — scorecard, verdict | Claude Code tổng hợp số liệu từ `results-v2`/`verdicts-v3`/`labels-golden-v1` và dựng bảng theo slice | Chạy script đối chiếu lại toàn bộ số trong REPORT với data thô trong `evidence/` — mọi con số tái lập được bằng lệnh |
 
-- Phần nào AI gợi ý mà bạn **bác bỏ**? Vì sao?
-- Phần nào bạn **hoàn toàn tự làm**?
+### Phần nào AI gợi ý mà tôi bác bỏ
+
+1. **Vòng rà 29 câu (Phase 1)** — bác 3 đề xuất, chi tiết ở mục dưới.
+2. **Sửa nhãn `VLT-018` thành `fail`** (Phase 5) — AI lập luận bằng chứng nghiêng về judge.
+   Tôi giữ nhãn `pass`: nhãn người là thước để đo judge, sửa ngược theo judge là mất thước.
+3. **Để trống nhãn `VLT-017`, `VLT-023`** (Phase 3) — AI đề xuất bỏ trống vì hai câu này đã
+   bị rewrite sau khi nhóm chấm. Nhóm giữ nhãn đã thống nhất trong `labels-group.csv`.
+
+### Phần nào tôi hoàn toàn tự làm
+
+- Viết 10/29 câu ứng viên (câu 10–19, các ô C05–C10 — nhóm ô rủi ro cao).
+- Chấm tay độc lập toàn bộ scenario trước khi nhóm họp hợp nhất.
+- Bốn quyết định D1–D4 (định nghĩa "nói rõ giả định", "nói rõ vế thiếu", quote verbatim
+  không phải blocker, giữ nhãn `VLT-018`) — AI trình bày lựa chọn, người chốt.
+- Quyết định gate theo slice và verdict SHIP WITH CONDITIONS.
 
 ## Ghi chú Phase 1 — phần nào là của AI, phần nào nhóm phải tự quyết
 
