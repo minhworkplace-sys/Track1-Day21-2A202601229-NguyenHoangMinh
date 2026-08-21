@@ -32,12 +32,21 @@ từng vòng.
 
 ## Checklist trước khi nộp
 
-- [ ] `deliverables/REPORT.md` đủ 7 mục (1 Input Grid … 7 Verdict); mục nào cũng có phần **quyết định + vì sao**
-- [ ] `deliverables/evidence/` có đủ data thô của mọi bước: dataset, results, labels, judge prompts
+- [x] `deliverables/REPORT.md` đủ 7 mục (1 Input Grid … 7 Verdict); mục nào cũng có phần **quyết định + vì sao**
+- [x] `deliverables/evidence/` có đủ data thô của mọi bước: dataset, results, labels, judge prompts
       từng vòng, verdicts từng vòng, link Braintrust/LangSmith (trace mọi run)
-- [ ] Số liệu trong REPORT.md khớp với data trong deliverables/evidence/ (kiểm chứng được)
-- [ ] Verdict có đủ 5 phần report và một quyết định rõ ràng
-- [ ] `ai-support-log.md` là của chính người nộp
+- [x] Số liệu trong REPORT.md khớp với data trong deliverables/evidence/ (kiểm chứng được)
+- [x] Verdict có đủ 5 phần report và một quyết định rõ ràng
+- [x] `ai-support-log.md` là của chính người nộp
+
+**Tự rà thêm (ngoài checklist gốc):**
+
+- [x] Human–human agreement đo từ vòng chấm độc lập: **7/25 = 28%** (Bách vs Thịnh)
+- [x] Confusion matrix **từng vòng** + diff judge prompt giữa hai vòng
+- [x] Dataset đủ out-of-scope (4), mơ hồ (7), high-risk (12); 26/26 row có `human_decision`
+- [ ] **Threshold có timestamp trước khi chạy candidate** — vòng v1 KHÔNG đạt: gate chốt sau
+      khi đã nhìn kết quả. Đã khai báo trong mục 6 và pre-register ngưỡng G1–G4 cho vòng sau
+      (timestamp `2026-08-21 19:22 +0700`)
 
 ## Gợi ý
 

@@ -105,7 +105,7 @@ Chi tiết: [deliverables/REPORT.md](deliverables/REPORT.md) mục 6–7.
 
 **Mọi lệnh đều chạy từ root repo** (thư mục chứa README này). Luồng làm việc: file
 scratch sinh ra ở root → chốt một vòng thì copy vào `deliverables/evidence/`, đặt tên
-theo version (`results-v1.jsonl`, `verdicts-v2.jsonl`...), không ghi đè vòng cũ.
+theo version (`results-v1.jsonl`, `verdicts-v1.jsonl`...), không ghi đè vòng cũ.
 
 ## Quickstart (3 phút)
 

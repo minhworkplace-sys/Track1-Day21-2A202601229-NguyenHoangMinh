@@ -328,10 +328,10 @@ vẫn giữ cho người ở v1 để xem judge có bắt đúng không đã.
 
 ### Judge prompt
 
-`judge_prompt-v1.md` (bản gốc của kit) chỉ chấm **R3 groundedness**, và trộn lẫn R4 (scope)
+`judge-prompt-v0-kit-original.md` (bản gốc của kit) chỉ chấm **R3 groundedness**, và trộn lẫn R4 (scope)
 vào chính phần rubric PASS/FAIL của R3 — verdict lệch thì không biết lệch vì tiêu chí nào.
 
-`judge_prompt-v2.md` tách **4 tiêu chí thành 4 mục độc lập**, judge chấm từng mục rồi mới
+`judge-prompt-v1.md` tách **4 tiêu chí thành 4 mục độc lập**, judge chấm từng mục rồi mới
 tổng hợp:
 
 | Mục trong prompt | Tiêu chí | Điểm nhấn khi chấm |
@@ -372,8 +372,8 @@ tutor bịa nguồn. `max_tokens` của judge nâng 500 → 900 cho đủ 4 verd
 
 | Vòng | Prompt | Thay đổi | Agreement |
 |---|---|---|---|
-| 1 | `judge_prompt-v2.md` | Tách R3/R4/R5/R8 thành 4 mục độc lập; nạp text thật của section đã cite vào prompt | **18/26 = 69%** |
-| 2 | `judge_prompt-v3.md` | Thêm **Bước 0**: phân loại answer (A) có nội dung bài học / (B) từ chối–hỏi lại. Với (B), `sources` rỗng là ĐÚNG | **20/26 = 77%** |
+| 1 | `judge-prompt-v1.md` | Tách R3/R4/R5/R8 thành 4 mục độc lập; nạp text thật của section đã cite vào prompt | **18/26 = 69%** |
+| 2 | `judge-prompt-v2.md` | Thêm **Bước 0**: phân loại answer (A) có nội dung bài học / (B) từ chối–hỏi lại. Với (B), `sources` rỗng là ĐÚNG | **20/26 = 77%** |
 
 Vòng 1 lộ ra một bug rõ: judge chấm `fail` cả 3 câu **từ chối chính đáng** (`VLT-012`,
 `VLT-018`, `VLT-021` — đều `scope: out_of_scope`, `sources: []`) với lý do *"không có nguồn
@@ -383,7 +383,7 @@ nào được trích dẫn"*. Từ chối mà không trích nguồn là hành vi
 
 ### Confusion matrix từng vòng (dán output judge.py)
 
-**Vòng 1 — `judge_prompt-v2.md`** (`evidence/verdicts-v2.jsonl`):
+**Vòng 1 — `judge-prompt-v1.md`** (`evidence/verdicts-v1.jsonl`):
 
 ```
 Confusion matrix (hàng = judge, cột = nhãn người):
@@ -394,7 +394,7 @@ Confusion matrix (hàng = judge, cột = nhãn người):
 Agreement: 18/26 = 69%
 ```
 
-**Vòng 2 — `judge_prompt-v3.md`** (`evidence/verdicts-v3.jsonl`):
+**Vòng 2 — `judge-prompt-v2.md`** (`evidence/verdicts-v2.jsonl`):
 
 ```
 Confusion matrix (hàng = judge, cột = nhãn người):
@@ -411,7 +411,7 @@ không kéo theo hiệu ứng phụ chỗ khác.
 
 ### Diff judge prompt giữa hai vòng
 
-File đầy đủ: `evidence/judge_prompt-v2-to-v3.diff` (**+31 / −3 dòng**). Nội dung thay đổi:
+File đầy đủ: `evidence/judge-prompt-v1-to-v2.diff` (**+31 / −3 dòng**). Nội dung thay đổi:
 
 | Chỗ sửa | v2 | v3 |
 |---|---|---|
@@ -472,7 +472,7 @@ làn này, không được cộng gộp thành một pass rate duy nhất.
 
 > Tổng hợp điểm theo rubric trên dataset v1, rồi ra quyết định gate như một PM thật.
 
-Nguồn số: `evidence/results-v2.jsonl` (26 row) · `evidence/verdicts-v3.jsonl` ·
+Nguồn số: `evidence/results-v2.jsonl` (26 row) · `evidence/verdicts-v2.jsonl` ·
 `evidence/labels-golden-v1.csv` · output `eval/code_checks.py`.
 
 ### Scorecard
@@ -485,7 +485,7 @@ Nguồn số: `evidence/results-v2.jsonl` (26 row) · `evidence/verdicts-v3.json
 | R2 `citation_exists` | 26 | 0 | **100%** |
 | R9 `quote_verbatim` | 21 | 5 | **81%** (điểm trừ, không blocker) |
 
-**Làn judge** (`judge_prompt-v3.md`, `gpt-4o-mini`):
+**Làn judge** (`judge-prompt-v2.md`, `gpt-4o-mini`):
 
 | Tiêu chí | Pass | Fail | Uncertain (không áp dụng) | Pass rate |
 |---|---|---|---|---|

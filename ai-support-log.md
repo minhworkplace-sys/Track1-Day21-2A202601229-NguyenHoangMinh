@@ -13,7 +13,7 @@
 | 5 | Phase 3 — ánh xạ id nhãn | Claude Code khớp nội dung 29 câu ứng viên (`S###`) với 26 row dataset v1 (`VLT-###`) để `judge.py` đối chiếu được nhãn | Kiểm bằng script: tập id trong `labels.csv` khớp 100% với `results.jsonl`; bảng ánh xạ từng dòng trong `evidence/label-id-mapping.md` để nhóm rà tay |
 | 6 | Phase 3 — rubric R1–R11 | Claude Code rút ngược tiêu chí từ **26 note chấm tay của nhóm**, không tự nghĩ tiêu chí mới; mỗi tiêu chí phải gắn ít nhất một `scenario_id` thật | Rà từng tiêu chí xem có row thật làm ví dụ không; 2 chỗ nhóm chấm không nhất quán được đưa ra họp chốt (D1, D2) chứ AI không tự quyết |
 | 7 | Phase 4 — judge prompt v2/v3 | Claude Code viết prompt theo rubric của nhóm, và sửa `eval/judge.py` nạp text nguồn thật vào prompt | Chạy thật 2 vòng, đối chiếu confusion matrix với nhãn vàng: 69% → 77%; đọc từng verdict để tìm nguyên nhân, không tin số tổng |
-| 8 | Phase 6–7 — scorecard, verdict | Claude Code tổng hợp số liệu từ `results-v2`/`verdicts-v3`/`labels-golden-v1` và dựng bảng theo slice | Chạy script đối chiếu lại toàn bộ số trong REPORT với data thô trong `evidence/` — mọi con số tái lập được bằng lệnh |
+| 8 | Phase 6–7 — scorecard, verdict | Claude Code tổng hợp số liệu từ `results-v2`/`verdicts-v2`/`labels-golden-v1` và dựng bảng theo slice | Chạy script đối chiếu lại toàn bộ số trong REPORT với data thô trong `evidence/` — mọi con số tái lập được bằng lệnh |
 
 ### Phần nào AI gợi ý mà tôi bác bỏ
 
